@@ -1,0 +1,271 @@
+# src/gui/styles.py
+
+DARK_THEME = """
+QMainWindow {
+    background-color: #1e1e2e;
+}
+
+QWidget {
+    background-color: #1e1e2e;
+    color: #cdd6f4;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 10pt;
+}
+
+/* Panel Styling */
+QGroupBox {
+    background-color: #313244;
+    border: 2px solid #45475a;
+    border-radius: 8px;
+    margin-top: 12px;
+    padding: 15px;
+    font-weight: bold;
+    color: #f5e0dc;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 15px;
+    padding: 0 5px;
+}
+
+/* List Widget */
+QListWidget {
+    background-color: #181825;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    padding: 5px;
+    outline: none;
+}
+
+QListWidget::item {
+    padding: 8px;
+    border-radius: 4px;
+    margin: 2px 0;
+}
+
+QListWidget::item:selected {
+    background-color: #89b4fa;
+    color: #1e1e2e;
+}
+
+QListWidget::item:hover {
+    background-color: #45475a;
+}
+
+/* Text Edit */
+QTextEdit {
+    background-color: #181825;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    padding: 10px;
+    color: #cdd6f4;
+}
+
+/* Labels */
+QLabel {
+    background-color: transparent;
+    color: #cdd6f4;
+}
+
+QLabel[heading="true"] {
+    font-size: 14pt;
+    font-weight: bold;
+    color: #f5e0dc;
+}
+
+/* Buttons */
+QPushButton {
+    background-color: #89b4fa;
+    color: #1e1e2e;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #b4befe;
+}
+
+QPushButton:pressed {
+    background-color: #74c7ec;
+}
+
+QPushButton:disabled {
+    background-color: #45475a;
+    color: #6c7086;
+}
+
+QPushButton[danger="true"] {
+    background-color: #f38ba8;
+}
+
+QPushButton[danger="true"]:hover {
+    background-color: #eba0ac;
+}
+
+QPushButton[success="true"] {
+    background-color: #a6e3a1;
+}
+
+/* Status Badge */
+QLabel[status="healthy"] {
+    background-color: #a6e3a1;
+    color: #1e1e2e;
+    border-radius: 10px;
+    padding: 4px 12px;
+    font-weight: bold;
+}
+
+QLabel[status="warning"] {
+    background-color: #f9e2af;
+    color: #1e1e2e;
+    border-radius: 10px;
+    padding: 4px 12px;
+    font-weight: bold;
+}
+
+QLabel[status="critical"] {
+    background-color: #f38ba8;
+    color: #1e1e2e;
+    border-radius: 10px;
+    padding: 4px 12px;
+    font-weight: bold;
+}
+
+/* Table Widget */
+QTableWidget {
+    background-color: #181825;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    gridline-color: #45475a;
+}
+
+QTableWidget::item {
+    padding: 5px;
+}
+
+QTableWidget::item:selected {
+    background-color: #89b4fa;
+    color: #1e1e2e;
+}
+
+QHeaderView::section {
+    background-color: #313244;
+    color: #f5e0dc;
+    padding: 8px;
+    border: none;
+    font-weight: bold;
+}
+
+/* Scrollbar */
+QScrollBar:vertical {
+    background-color: #1e1e2e;
+    width: 12px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #45475a;
+    border-radius: 6px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #585b70;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+/* Menu Bar */
+QMenuBar {
+    background-color: #313244;
+    color: #cdd6f4;
+    padding: 4px;
+}
+
+QMenuBar::item {
+    padding: 6px 12px;
+    border-radius: 4px;
+}
+
+QMenuBar::item:selected {
+    background-color: #45475a;
+}
+
+QMenu {
+    background-color: #313244;
+    border: 1px solid #45475a;
+}
+
+QMenu::item {
+    padding: 8px 30px;
+}
+
+QMenu::item:selected {
+    background-color: #89b4fa;
+    color: #1e1e2e;
+}
+
+/* Status Bar */
+QStatusBar {
+    background-color: #313244;
+    color: #cdd6f4;
+}
+
+/* Combo Box */
+QComboBox {
+    background-color: #313244;
+    border: 1px solid #45475a;
+    border-radius: 4px;
+    padding: 5px 10px;
+    color: #cdd6f4;
+}
+
+QComboBox::drop-down {
+    border: none;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #313244;
+    border: 1px solid #45475a;
+    selection-background-color: #89b4fa;
+}
+
+/* Progress Bar */
+QProgressBar {
+    background-color: #181825;
+    border: 1px solid #45475a;
+    border-radius: 4px;
+    text-align: center;
+    color: #cdd6f4;
+}
+
+QProgressBar::chunk {
+    background-color: #89b4fa;
+    border-radius: 3px;
+}
+"""
+
+def get_status_color(status):
+    """Get color for service status"""
+    colors = {
+        'healthy': '#a6e3a1',
+        'warning': '#f9e2af',
+        'critical': '#f38ba8',
+        'unknown': '#6c7086'
+    }
+    return colors.get(status.lower(), colors['unknown'])
+
+def get_severity_color(severity):
+    """Get color for incident severity"""
+    colors = {
+        'low': '#89b4fa',
+        'medium': '#f9e2af',
+        'high': '#fab387',
+        'critical': '#f38ba8'
+    }
+    return colors.get(severity.lower(), colors['low'])
