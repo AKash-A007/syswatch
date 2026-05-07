@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='syswatch-pro',
-    version='1.0.0',
+    version='0.1.0',
     description='AI-Driven Distributed Systems Debugger - Professional Desktop Edition',
     author='Your Name',
     author_email='your.email@example.com',
