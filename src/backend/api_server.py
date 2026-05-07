@@ -2,6 +2,7 @@
 
 import os
 import sys
+from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 
@@ -41,7 +42,30 @@ if _sentry_dsn:
         send_default_pii=False,  # GDPR-safe default
     )
 
-app = FastAPI(title="SysWatch APIs", version="1.0.0")
+
+# ─── Lifespan (replaces deprecated on_event) ──────────────────────────────────
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup and shutdown logic using modern lifespan context manager."""
+    global storage, collector, detector, rca_engine
+    storage = Storage()
+    collector = MetricsCollector(storage=storage)
+    detector = AnomalyDetector()
+    rca_engine = RootCauseEngine()
+    collector.start()
+    logger.info("API Server started and components initialized.")
+    yield
+    # Shutdown
+    if collector:
+        collector.stop()
+    if storage:
+        storage.close()
+    logger.info("API Server shutdown.")
+
+
+app = FastAPI(title="SysWatch APIs", version="1.0.0", lifespan=lifespan)
 
 # Enable CORS
 app.add_middleware(
@@ -51,6 +75,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ─── API Routes ────────────────────────────────────────────────────────────────
 
 # ─── Data models ───────────────────────────────────────────────────────────────
 
@@ -103,27 +129,6 @@ detector: AnomalyDetector = None
 rca_engine: RootCauseEngine = None
 
 # ─── API Routes ────────────────────────────────────────────────────────────────
-
-
-@app.on_event("startup")
-async def startup_event():
-    global storage, collector, detector, rca_engine
-    storage = Storage()
-    collector = MetricsCollector(storage=storage)
-    detector = AnomalyDetector()
-    rca_engine = RootCauseEngine()
-
-    collector.start()
-    logger.info("API Server started and components initialized.")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    if collector:
-        collector.stop()
-    if storage:
-        storage.close()
-    logger.info("API Server shutdown.")
 
 
 @app.get("/")

@@ -3,7 +3,7 @@ PySide6==6.6.1
 pyqtgraph==0.13.3
 
 # Backend API
-fastapi==0.109.0
+fastapi>=0.115.0
 uvicorn==0.27.0
 pydantic==2.5.3
 
