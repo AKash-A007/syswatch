@@ -2,6 +2,15 @@
 
 **AI-Driven Distributed Systems Debugger**
 
+[![CI](https://github.com/AKash-A007/syswatch/actions/workflows/ci.yml/badge.svg)](https://github.com/AKash-A007/syswatch/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/AKash-A007/syswatch/branch/main/graph/badge.svg)](https://codecov.io/gh/AKash-A007/syswatch)
+[![Security](https://github.com/AKash-A007/syswatch/actions/workflows/security.yml/badge.svg)](https://github.com/AKash-A007/syswatch/actions/workflows/security.yml)
+[![Docker](https://github.com/AKash-A007/syswatch/actions/workflows/docker.yml/badge.svg)](https://github.com/AKash-A007/syswatch/actions/workflows/docker.yml)
+[![Release](https://img.shields.io/github/v/release/AKash-A007/syswatch?include_prereleases)](https://github.com/AKash-A007/syswatch/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Linting: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
 A professional desktop application for monitoring distributed systems with real-time metrics, intelligent incident detection, and AI-powered root cause analysis.
 
 ---

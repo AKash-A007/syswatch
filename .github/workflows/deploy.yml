@@ -1,0 +1,91 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - dev    # → staging (auto)
+      - main   # → production (manual approval required)
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Deploy to STAGING when dev branch is updated
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy-staging:
+    name: 🚀 Deploy → Staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev'
+    environment:
+      name: staging
+      url: https://syswatch-staging.onrender.com
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Trigger Render staging deploy
+        run: |
+          curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            "https://api.render.com/v1/services/${{ secrets.RENDER_STAGING_SERVICE_ID }}/deploys" \
+            -d '{"clearCache": false}'
+          echo "✅ Staging deploy triggered"
+
+      - name: Wait for deploy and health-check
+        run: |
+          echo "⏳ Waiting 60 seconds for deployment to complete..."
+          sleep 60
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            https://syswatch-staging.onrender.com/health)
+          echo "Health check status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "❌ Staging health check failed!"
+            exit 1
+          fi
+          echo "✅ Staging is healthy!"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Deploy to PRODUCTION when main branch is updated
+  # Requires manual approval via GitHub Environments
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy-production:
+    name: 🚀 Deploy → Production
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://syswatch.onrender.com
+    # ⚠️  This job will PAUSE here and wait for a maintainer to approve
+    # in the GitHub Actions UI before proceeding.
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Trigger Render production deploy
+        run: |
+          curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            "https://api.render.com/v1/services/${{ secrets.RENDER_PROD_SERVICE_ID }}/deploys" \
+            -d '{"clearCache": false}'
+          echo "✅ Production deploy triggered"
+
+      - name: Wait for deploy and health-check
+        run: |
+          echo "⏳ Waiting 90 seconds for production deployment..."
+          sleep 90
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            https://syswatch.onrender.com/health)
+          echo "Health check status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "❌ Production health check failed! Consider rolling back."
+            exit 1
+          fi
+          echo "✅ Production is healthy!"
+
+      - name: Create deployment annotation
+        run: |
+          echo "🎉 Successfully deployed version ${{ github.sha }} to production"
+          echo "Deployed by: ${{ github.actor }}"
+          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
