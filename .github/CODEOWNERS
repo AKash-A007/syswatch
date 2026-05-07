@@ -1,0 +1,8 @@
+# CODEOWNERS — automatically assigned as reviewer on every PR
+#
+# GitHub uses this file to auto-assign reviewers when a PR touches these paths.
+# Format: <path-pattern>  @<github-username>
+#
+# * means "every file in the repo"
+
+* @AKash-A007
