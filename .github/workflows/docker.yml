@@ -57,7 +57,7 @@ jobs:
 
       # ── Scan Dockerfile for misconfigurations before building ───────────────
       - name: Lint Dockerfile with Hadolint
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         with:
           dockerfile: Dockerfile
           ignore: DL3008,DL3009   # apt-get version pinning warnings
