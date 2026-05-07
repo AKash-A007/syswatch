@@ -22,3 +22,28 @@ dist/
 # OS files
 .DS_Store
 Thumbs.db
+
+# ── CI / Testing ──────────────────────────────────────────────────────────────
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Pre-commit ────────────────────────────────────────────────────────────────
+.pre-commit-cache/
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+*.tar
+
+# ── Security scan outputs ─────────────────────────────────────────────────────
+trivy-results.sarif
+trivy-image.sarif
+trivy.yaml
+
+# ── Secrets (NEVER commit these!) ────────────────────────────────────────────
+.env
+*.env
+.envrc
+secrets.json

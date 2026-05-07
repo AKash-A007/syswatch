@@ -1,0 +1,38 @@
+repos:
+  # ── Ruff — Python linter (replaces flake8 + isort) ───────────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.4
+    hooks:
+      - id: ruff
+        args: [--fix]   # Auto-fix safe issues
+        types_or: [python, pyi]
+
+  # ── Black — Python formatter ───────────────────────────────────────────────
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        language_version: python3
+
+  # ── General file hygiene ───────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace       # Remove trailing spaces
+      - id: end-of-file-fixer         # Ensure newline at EOF
+      - id: check-yaml                # Validate YAML files
+      - id: check-toml                # Validate TOML files
+      - id: check-json                # Validate JSON files
+      - id: check-merge-conflict      # Catch unresolved merge conflicts
+      - id: check-added-large-files   # Warn on files > 500KB
+        args: ["--maxkb=500"]
+      - id: debug-statements          # Catch forgotten breakpoint()/pdb
+      - id: detect-private-key        # Never commit secrets!
+
+  # ── Conventional Commits message check ────────────────────────────────────
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.2.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [feat, fix, chore, docs, refactor, test, ci, perf, style, build]

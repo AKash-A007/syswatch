@@ -1,0 +1,39 @@
+# Render Blueprint — SysWatch Pro Backend
+# https://render.com/docs/blueprint-spec
+#
+# Connect your GitHub repo to Render, and this file auto-configures
+# both staging and production services.
+
+services:
+  # ── Production Backend ────────────────────────────────────────────────────
+  - type: web
+    name: syswatch-api
+    env: docker
+    dockerfilePath: ./Dockerfile
+    region: oregon
+    plan: free
+    branch: main
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_ENV
+        value: production
+      - key: PORT
+        value: 8000
+      # Add your real secrets via Render dashboard or render.yaml secrets:
+      # - key: SENTRY_DSN
+      #   sync: false   # Enter manually in Render dashboard
+
+  # ── Staging Backend ───────────────────────────────────────────────────────
+  - type: web
+    name: syswatch-api-staging
+    env: docker
+    dockerfilePath: ./Dockerfile
+    region: oregon
+    plan: free
+    branch: dev
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_ENV
+        value: staging
+      - key: PORT
+        value: 8000

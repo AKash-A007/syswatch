@@ -1,0 +1,53 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    name: 🚀 Release Please
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          # Uses Conventional Commits to determine version bump:
+          # feat: → minor, fix: → patch, feat!: → major
+          release-type: python
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # release-please reads version from this file
+          version-file: "setup.py"
+          changelog-types: |
+            [
+              {"type":"feat","section":"✨ Features"},
+              {"type":"fix","section":"🐛 Bug Fixes"},
+              {"type":"perf","section":"⚡ Performance"},
+              {"type":"refactor","section":"♻️ Refactoring"},
+              {"type":"docs","section":"📚 Documentation"},
+              {"type":"ci","section":"👷 CI/CD"},
+              {"type":"chore","section":"🔧 Chores","hidden":true},
+              {"type":"test","section":"🧪 Tests","hidden":true}
+            ]
+
+  # ── If a release was created, trigger Docker build with the new tag ─────────
+  trigger-docker:
+    name: 🐳 Trigger Docker Build
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log the new release
+        run: |
+          echo "🎉 New release: ${{ needs.release-please.outputs.tag_name }}"
+          echo "Version: ${{ needs.release-please.outputs.version }}"

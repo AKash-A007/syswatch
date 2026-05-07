@@ -1,26 +1,45 @@
 # src/backend/api_server.py
 
 import os
+import sys
 from datetime import datetime
-from typing import List, Dict, Optional, Any
-import requests
+from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+import sentry_sdk
+import uvicorn
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import uvicorn
-
-from pathlib import Path
-import sys
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.starlette import StarletteIntegration
 
 # Allow running as module and resolving imports correctly
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from backend.storage import Storage
-from backend.collector import MetricsCollector, _status_from_usage
 from backend.analyzer import AnomalyDetector, RootCauseEngine
+from backend.collector import MetricsCollector, _status_from_usage
+from backend.storage import Storage
 from utils.logger import get_logger
 
 logger = get_logger("api")
+
+# ─── Sentry Initialisation ────────────────────────────────────────────────────
+# DSN is read from the SENTRY_DSN environment variable.
+# Set it in Render → Environment, or locally via .env.
+_sentry_dsn = os.getenv("SENTRY_DSN", "")
+if _sentry_dsn:
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        integrations=[
+            StarletteIntegration(transaction_style="endpoint"),
+            FastApiIntegration(transaction_style="endpoint"),
+        ],
+        # Capture 10% of transactions to stay within free-tier limits
+        traces_sample_rate=0.1,
+        profiles_sample_rate=0.1,
+        environment=os.getenv("PYTHON_ENV", "development"),
+        release=os.getenv("APP_VERSION", "1.0.0"),
+        send_default_pii=False,  # GDPR-safe default
+    )
 
 app = FastAPI(title="SysWatch APIs", version="1.0.0")
 
@@ -35,6 +54,7 @@ app.add_middleware(
 
 # ─── Data models ───────────────────────────────────────────────────────────────
 
+
 class ServiceModel(BaseModel):
     id: str
     name: str
@@ -43,11 +63,13 @@ class ServiceModel(BaseModel):
     memory_usage: float
     uptime_seconds: int
 
+
 class AgentRegisterModel(BaseModel):
     id: str
     name: str
     status: str = "healthy"
-    metadata: Dict = {}
+    metadata: dict = {}
+
 
 class AgentMetricsModel(BaseModel):
     cpu: float
@@ -55,20 +77,23 @@ class AgentMetricsModel(BaseModel):
     latency: float
     requests: float
 
+
 class IncidentModel(BaseModel):
     service: str
     severity: str
     type: str
     description: str
     status: str = "active"
-    details: Dict = {}
+    details: dict = {}
+
 
 class AnalysisRequest(BaseModel):
     id: int
     service: str
     type: str
     severity: str
-    details: Dict
+    details: dict
+
 
 # ─── Globals ───────────────────────────────────────────────────────────────────
 
@@ -79,6 +104,7 @@ rca_engine: RootCauseEngine = None
 
 # ─── API Routes ────────────────────────────────────────────────────────────────
 
+
 @app.on_event("startup")
 async def startup_event():
     global storage, collector, detector, rca_engine
@@ -86,9 +112,10 @@ async def startup_event():
     collector = MetricsCollector(storage=storage)
     detector = AnomalyDetector()
     rca_engine = RootCauseEngine()
-    
+
     collector.start()
     logger.info("API Server started and components initialized.")
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -98,15 +125,26 @@ async def shutdown_event():
         storage.close()
     logger.info("API Server shutdown.")
 
+
 @app.get("/")
 async def root():
     return {"message": "SysWatch API", "version": "1.0.0"}
 
+
+@app.get("/health")
+async def health():
+    """Root-level health check — used by Render, Docker HEALTHCHECK, and UptimeRobot."""
+    return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
+
+
 @app.get("/api/health")
 async def health_check():
+    """Legacy health endpoint — kept for backwards compatibility."""
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
+
 # ─── System & Host Metrics ───
+
 
 @app.get("/api/system")
 async def get_system_metrics():
@@ -115,7 +153,9 @@ async def get_system_metrics():
         raise HTTPException(503, "Collector not initialized")
     return collector.get_host_metrics()
 
+
 # ─── Services ───
+
 
 @app.get("/api/services")
 async def get_services():
@@ -123,21 +163,24 @@ async def get_services():
     # Force sync demo services into DB right before returning
     db_services = storage.get_services()
     db_svc_keys = {s["id"] for s in db_services}
-    
+
     mem_services = collector.get_services()
     for mem_svc in mem_services:
         if mem_svc["id"] not in db_svc_keys:
-            storage.upsert_service({
-                "id": mem_svc["id"],
-                "name": mem_svc["name"],
-                "status": mem_svc["status"],
-                "cpu_usage": mem_svc.get("cpu_usage", 0.0),
-                "memory_usage": mem_svc.get("memory_usage", 0.0),
-                "uptime_seconds": mem_svc.get("uptime_seconds", 0)
-            })
-    
+            storage.upsert_service(
+                {
+                    "id": mem_svc["id"],
+                    "name": mem_svc["name"],
+                    "status": mem_svc["status"],
+                    "cpu_usage": mem_svc.get("cpu_usage", 0.0),
+                    "memory_usage": mem_svc.get("memory_usage", 0.0),
+                    "uptime_seconds": mem_svc.get("uptime_seconds", 0),
+                }
+            )
+
     # Return directly from storage so it is consistent
     return {"services": storage.get_services()}
+
 
 @app.get("/api/services/{service_id}")
 async def get_service(service_id: str):
@@ -146,6 +189,7 @@ async def get_service(service_id: str):
         if s["id"] == service_id:
             return s
     raise HTTPException(status_code=404, detail="Service not found")
+
 
 @app.get("/api/metrics/{service_id}")
 async def get_metrics(service_id: str, background_tasks: BackgroundTasks):
@@ -164,12 +208,13 @@ async def get_metrics(service_id: str, background_tasks: BackgroundTasks):
             }
         else:
             raise HTTPException(status_code=404, detail="No metrics found")
-            
+
     # Run detector in background
     background_tasks.add_task(process_metrics_anomalies, service_id, metrics)
     return metrics
 
-def process_metrics_anomalies(service_id: str, metrics: Dict[str, float]):
+
+def process_metrics_anomalies(service_id: str, metrics: dict[str, float]):
     """Background task to run detector and save incidents if anomalies found."""
     alerts = detector.feed(service_id, metrics)
     for alert in alerts:
@@ -184,10 +229,11 @@ def process_metrics_anomalies(service_id: str, metrics: Dict[str, float]):
                 "metric": alert["metric"],
                 "value": alert["value"],
                 "threshold": alert["threshold"],
-                "zscore": alert["zscore"]
-            }
+                "zscore": alert["zscore"],
+            },
         }
         storage.save_incident(incident)
+
 
 @app.get("/api/metrics/{service_id}/history")
 async def get_metrics_history(service_id: str, limit: int = 120):
@@ -205,12 +251,15 @@ async def get_metrics_history(service_id: str, limit: int = 120):
         "requests": [r["requests"] for r in db_hist],
     }
 
+
 # ─── Incidents ───
+
 
 @app.get("/api/incidents")
 async def get_incidents():
     """Get all incidents"""
     return {"incidents": storage.get_incidents()}
+
 
 @app.post("/api/incidents")
 async def create_incident(incident: IncidentModel):
@@ -221,17 +270,20 @@ async def create_incident(incident: IncidentModel):
     data["timestamp"] = datetime.utcnow().isoformat()
     return data
 
+
 @app.delete("/api/incidents")
 async def clear_incidents():
     """Clear all incidents"""
     storage.clear_incidents()
     return {"status": "cleared"}
 
+
 @app.post("/api/analyze")
 async def analyze_incident(request: AnalysisRequest):
     """Run root-cause analysis on an incident."""
     incident_dict = request.dict()
     return rca_engine.analyze(incident_dict)
+
 
 @app.post("/api/stress-test")
 async def run_stress_test():
@@ -243,6 +295,7 @@ async def run_stress_test():
         return {"status": "started", "message": "Stress test initiated on api-gateway"}
     return {"status": "failed", "message": "Target service not found"}
 
+
 @app.post("/api/simulate-incident")
 async def simulate_incident():
     """Simulate an incident."""
@@ -253,13 +306,15 @@ async def simulate_incident():
         "type": "High Error Rate",
         "description": "User simulated incident. Rate at 50%.",
         "status": "active",
-        "details": {"error_rate": 50.0}
+        "details": {"error_rate": 50.0},
     }
     nid = storage.save_incident(data)
     data["id"] = nid
     return data
 
+
 # ─── External Agent Registration ───
+
 
 @app.post("/api/agents/register")
 async def register_agent(agent: AgentRegisterModel):
@@ -272,6 +327,7 @@ async def register_agent(agent: AgentRegisterModel):
     storage.upsert_service(data)
     return {"status": "registered", "id": agent.id}
 
+
 @app.post("/api/agents/metrics/{service_id}")
 async def post_agent_metrics(service_id: str, metrics: AgentMetricsModel):
     """Receive metrics from an external agent."""
@@ -282,14 +338,16 @@ async def post_agent_metrics(service_id: str, metrics: AgentMetricsModel):
     storage.save_metrics(service_id, m_dict)
     # Update services table status
     status = _status_from_usage(metrics.cpu, metrics.memory)
-    storage.upsert_service({
-        "id": service_id,
-        "name": service_id,
-        "status": status,
-        "cpu_usage": metrics.cpu,
-        "memory_usage": metrics.memory,
-        "uptime_seconds": 0
-    })
+    storage.upsert_service(
+        {
+            "id": service_id,
+            "name": service_id,
+            "status": status,
+            "cpu_usage": metrics.cpu,
+            "memory_usage": metrics.memory,
+            "uptime_seconds": 0,
+        }
+    )
     return {"status": "received"}
 
 
