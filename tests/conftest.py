@@ -57,7 +57,7 @@ def sample_incident():
 def anomaly_detector():
     """Return a fresh AnomalyDetector with default thresholds."""
     from backend.analyzer import AnomalyDetector
-    return AnomalyDetector(80.0, 85.0, 2.0)
+    return AnomalyDetector()
 
 
 @pytest.fixture
