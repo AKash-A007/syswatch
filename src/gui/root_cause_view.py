@@ -202,13 +202,14 @@ class RootCauseView(QWidget):
         self.status_label.setText("✓ Analysis Complete")
         
         exp = result.get("explanation", "No explanation available")
+        temp = exp.replace("\n", "<br>")
         self.analysis_text.setHtml(f"""
             <div style='padding: 10px;'>
                 <h3 style='color: #f5e0dc; margin-bottom: 10px;'>
                     🎯 {result.get('root_cause', 'Unknown')}
                 </h3>
                 <div style='color: #cdd6f4; line-height: 1.6;'>
-                    {exp.replace('\n', '<br>')}
+                    {temp}
                 </div>
             </div>
         """)
